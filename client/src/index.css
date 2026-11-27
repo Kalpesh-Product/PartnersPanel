@@ -1,6 +1,102 @@
+/* Same fonts HostPanel's login/register/OTP pages load. */
+@import url("https://fonts.googleapis.com/css2?family=Playwrite+US+Modern:wght@100..400&family=Poppins:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Matches HostPanel's ClientLogin.css + ClientSpecialClasses.css — same
+   class names, ported here instead of referencing HostPanel's own files. */
+.font-play {
+  font-family: "Playwrite US Modern";
+}
+
+.font-pmedium {
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+}
+
+.poppinsRegular {
+  font-family: "Poppins", sans-serif;
+}
+
+.poppinsRegular .MuiInputBase-root,
+.poppinsRegular .MuiInputLabel-root,
+.poppinsRegular .MuiButtonBase-root {
+  font-family: "Poppins", sans-serif;
+}
+
+.poppinsRegular .MuiInputBase-input {
+  font-size: 0.875rem;
+}
+
+.text-subtitle {
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+.loginButtonStyling {
+  background-color: rgb(0, 0, 0);
+  color: white;
+  padding: 0.5rem 2rem;
+  border-radius: 30px;
+  margin: 0;
+  border: 0.1px solid rgb(181, 181, 181);
+}
+.loginButtonStyling:disabled {
+  opacity: 0.6;
+}
+
+.loginDividingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.centerInPhone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wono-blue-text {
+  color: rgb(10, 169, 239);
+}
+
+@media (max-width: 325px) {
+  .shrink-container {
+    transform: scale(0.8);
+  }
+}
+
+@media (min-height: 1900px) {
+  .loginTopPadding { padding-top: 36rem; }
+  .loginBottomPadding { padding-bottom: 36rem; }
+}
+
+@media (min-height: 1576px) and (max-height: 1900px) {
+  .loginTopPadding { padding-top: 26rem; }
+  .loginBottomPadding { padding-bottom: 26rem; }
+}
+
+@media (min-height: 1365px) and (max-height: 1575px) {
+  .loginTopPadding { padding-top: 19rem; }
+  .loginBottomPadding { padding-bottom: 19rem; }
+}
+
+@media (min-height: 900px) and (max-height: 1365px) {
+  .loginTopPadding { padding-top: 10rem; }
+  .loginBottomPadding { padding-bottom: 10rem; }
+}
+
+@media (max-height: 900px) {
+  .loginTopPadding { padding-top: 14rem; }
+  .loginBottomPadding { padding-bottom: 14rem; }
+}
 
 :root {
   --text: #6b6375;
@@ -15,51 +111,22 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: "Poppins", system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: "Poppins", system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
+  font: 16px/1.5 var(--sans);
+  letter-spacing: normal;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -68,32 +135,7 @@
 
 body {
   margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+  font-family: "Poppins", sans-serif;
 }
 p {
   margin: 0;

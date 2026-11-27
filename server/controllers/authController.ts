@@ -204,6 +204,16 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     await partner.save();
 
     res.cookie("partnerRefreshToken", refreshToken, refreshCookieOptions);
+    const profileComplete =
+      partner.services.length > 0 &&
+      partner.services.every(
+        (entry) =>
+          entry.companyName &&
+          entry.countryOfOrigin &&
+          entry.state &&
+          entry.city &&
+          entry.address,
+      );
     return res.status(200).json({
       accessToken,
       data: {
@@ -211,6 +221,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         fullName: partner.fullName,
         email: partner.email,
         services: partner.services.map((entry) => entry.service),
+        profileComplete,
       },
     });
   } catch (error) {
@@ -256,6 +267,109 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     }
     res.clearCookie("partnerRefreshToken", refreshCookieOptions);
     return res.status(200).json({ message: "Logged out." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const RESET_SESSION_EXPIRY = "15m";
+const signResetSession = (email: string) =>
+  jwt.sign({ purpose: "password_reset_session", email }, accessSecret(), { expiresIn: RESET_SESSION_EXPIRY });
+
+// POST /api/auth/forgot-password/start — body: { email }. Always responds
+// with the same generic message, whether or not the email has an account,
+// to avoid account enumeration.
+export const forgotPasswordStart = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const generic = { message: "If that email has an account, we've sent a verification code." };
+    if (!email) return res.status(400).json({ message: "Email is required." });
+
+    const partner = await Partner.findOne({ email });
+    if (partner) {
+      const code = `${Math.floor(100000 + Math.random() * 900000)}`;
+      await Otp.updateMany({ email, purpose: "password_reset", isUsed: false }, { $set: { isUsed: true } });
+      await Otp.create({
+        email,
+        code,
+        purpose: "password_reset",
+        expiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000),
+        payload: {},
+      });
+      const email_ = buildOtpEmail({ fullName: partner.fullName, code, expiryMinutes: OTP_EXPIRY_MINUTES });
+      await sendMail({ to: email, subject: email_.subject, text: email_.text, html: email_.html });
+    }
+
+    return res.status(200).json(generic);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/auth/forgot-password/verify-otp — body: { email, otp }
+export const forgotPasswordVerifyOtp = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const { otp } = req.body || {};
+    if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required." });
+
+    const otpRecord = await Otp.findOne({ email, purpose: "password_reset", isUsed: false }).sort({ createdAt: -1 });
+    if (!otpRecord) return res.status(400).json({ message: "Please request a code first." });
+    if (otpRecord.expiresAt.getTime() < Date.now()) {
+      otpRecord.isUsed = true;
+      await otpRecord.save();
+      return res.status(400).json({ message: "Code expired. Please request a new one." });
+    }
+    if (otpRecord.attempts >= 5) {
+      otpRecord.isUsed = true;
+      await otpRecord.save();
+      return res.status(429).json({ message: "Too many attempts. Please request a new code." });
+    }
+    if (String(otpRecord.code) !== String(otp)) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      return res.status(400).json({ message: "Invalid code." });
+    }
+
+    otpRecord.isUsed = true;
+    await otpRecord.save();
+    return res.status(200).json({ resetSessionToken: signResetSession(email) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/auth/forgot-password/reset — body: { resetSessionToken, password, confirmPassword }
+export const forgotPasswordReset = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { resetSessionToken, password, confirmPassword } = req.body || {};
+    if (!resetSessionToken) return res.status(400).json({ message: "Reset session is required." });
+    if (!password || password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords must match." });
+    }
+    const strengthMessage = validateStrongPassword(password);
+    if (strengthMessage) return res.status(400).json({ message: strengthMessage });
+
+    let decoded: { purpose: string; email: string };
+    try {
+      decoded = jwt.verify(resetSessionToken, accessSecret()) as { purpose: string; email: string };
+    } catch {
+      return res.status(403).json({ message: "Reset session expired. Please start again." });
+    }
+    if (decoded.purpose !== "password_reset_session") {
+      return res.status(403).json({ message: "Invalid reset session." });
+    }
+
+    const partner = await Partner.findOne({ email: decoded.email });
+    if (!partner) return res.status(404).json({ message: "Account not found." });
+
+    partner.password = password;
+    partner.refreshToken = "";
+    partner.failedLoginAttempts = 0;
+    partner.lockUntil = null;
+    await partner.save();
+
+    return res.status(200).json({ message: "Password reset successfully. You can now sign in." });
   } catch (error) {
     next(error);
   }

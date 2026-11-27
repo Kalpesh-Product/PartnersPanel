@@ -8,6 +8,7 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
 import inviteRoutes from "./routes/inviteRoutes.js";
+import partnerRoutes from "./routes/partnerRoutes.js";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/invites", inviteRoutes);
+app.use("/api/partners", partnerRoutes);
 
 // Generic JSON error response — the real error is logged, never leaked
 // (no stack trace, no raw error.message) to the client.
