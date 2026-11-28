@@ -8,6 +8,7 @@ import api from "../lib/axios";
 import { getErrorMessage } from "../lib/getErrorMessage";
 import { setCredentials } from "../redux/slices/authSlice";
 import AuthLayout from "../components/AuthLayout";
+import LoadingContainer from "../components/LoadingContainer";
 
 const SIGN_IN_HEADING = "Partner Login";
 
@@ -18,6 +19,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [typedHeading, setTypedHeading] = useState("");
   const [isFormVisible, setIsFormVisible] = useState(false);
 
@@ -40,6 +42,9 @@ const LoginPage = () => {
     try {
       const res = await api.post("/auth/login", { email, password });
       dispatch(setCredentials({ user: res.data.data, token: res.data.accessToken }));
+      // Keep the loader up while the dashboard loads the account instead of
+      // flashing the empty login form again (HostPanel does the same hand-off).
+      setRedirecting(true);
       navigate(res.data.data.profileComplete ? "/dashboard" : "/create-account", { replace: true });
     } catch (err) {
       toast.error(getErrorMessage(err, "Invalid email or password."));
@@ -47,6 +52,10 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+
+  if (redirecting) {
+    return <LoadingContainer height="min-h-screen" label="Signing you in…" />;
+  }
 
   return (
     <AuthLayout>

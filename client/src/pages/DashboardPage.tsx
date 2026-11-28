@@ -39,6 +39,7 @@ import { ActivityPanel, EmptyState, MetricTile, PlanUsageCard, QuickActionTile, 
 import UpgradePlanModal from "../components/dashboard/UpgradePlanModal";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
+import LoadingContainer from "../components/LoadingContainer";
 import logo from "../assets/WONO_LOGO_Black_TP.svg";
 
 interface PartnerProfile {
@@ -116,7 +117,7 @@ const DashboardPage = () => {
     }
   };
 
-  if (checkingProfile || !profile) return <div className="flex min-h-screen items-center justify-center font-pmedium text-sm text-slate-500">Loading your partner account…</div>;
+  if (checkingProfile || !profile) return <LoadingContainer height="min-h-screen" label="Loading your partner account…" />;
 
   const ownerName = profile.fullName || user?.fullName || "Partner";
   const firstName = ownerName.split(" ")[0];

@@ -5,7 +5,9 @@ import { CheckCircle, Eye, EyeOff, Lock, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import api from "../lib/axios";
 import { getErrorMessage } from "../lib/getErrorMessage";
+import { showSuccessAlert } from "../utils/alerts";
 import AuthLayout from "../components/AuthLayout";
+import LoadingContainer from "../components/LoadingContainer";
 
 const REGISTER_HEADING = "Register Yourself!";
 
@@ -15,7 +17,7 @@ interface InviteData {
   services: string[];
 }
 
-type Status = "loading" | "invalid" | "form" | "done";
+type Status = "loading" | "invalid" | "form";
 
 const useTypedHeading = (text: string, deps: unknown[]) => {
   const [typed, setTyped] = useState("");
@@ -79,8 +81,11 @@ const RegisterPage = () => {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
-      await api.post(`/auth/register/${token}/complete`, { password, confirmPassword });
-      setStatus("done");
+      const response = await api.post(`/auth/register/${token}/complete`, { password, confirmPassword });
+      // Same hand-off HostPanel's invite registration does: success popup,
+      // then back to the login screen to sign in with the new password.
+      await showSuccessAlert(response.data?.message || "Registration successful. Redirecting to Login...");
+      navigate("/", { replace: true });
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to complete registration."));
     } finally {
@@ -89,11 +94,7 @@ const RegisterPage = () => {
   };
 
   if (status === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <CircularProgress />
-      </div>
-    );
+    return <LoadingContainer height="min-h-screen" />;
   }
 
   if (status === "invalid") {
@@ -105,22 +106,6 @@ const RegisterPage = () => {
           <Link to="/" className="wono-blue-text hover:underline">
             Go to Login
           </Link>
-        </div>
-      </AuthLayout>
-    );
-  }
-
-  if (status === "done") {
-    return (
-      <AuthLayout>
-        <div className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-2xl font-semibold">Registration Complete</h1>
-        <p className="max-w-sm text-center text-sm text-gray-500">
-          Your account is ready. You can now sign in to the Partners Panel.
-        </p>
-        <button onClick={() => navigate("/")} className="loginButtonStyling text-subtitle font-medium w-40">
-          Go to Login
-        </button>
         </div>
       </AuthLayout>
     );

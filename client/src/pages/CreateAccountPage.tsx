@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Country, State, City } from "country-state-city";
-import { ArrowRight, ChevronDown, LockKeyhole, Paperclip, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Loader2, LockKeyhole, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
 import api from "../lib/axios";
 import { getErrorMessage } from "../lib/getErrorMessage";
 import { showSuccessAlert } from "../utils/alerts";
 import AuthLayout from "../components/AuthLayout";
+import LoadingContainer from "../components/LoadingContainer";
 import CountryMultiSelect from "../components/CountryMultiSelect";
 import CountrySingleSelect from "../components/CountrySingleSelect";
 import CheckboxMultiSelect from "../components/CheckboxMultiSelect";
@@ -270,7 +271,7 @@ const CreateAccountPage = () => {
   };
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-sm font-pmedium text-slate-500">Loading...</div>;
+    return <LoadingContainer height="min-h-screen" label="Loading your partner account…" />;
   }
 
   const continent = getContinentForCountry(currentCountry);
@@ -536,7 +537,15 @@ const CreateAccountPage = () => {
           <div className="mt-6 flex flex-col justify-between gap-4 border-t border-[#e1e6ef] pt-5 sm:flex-row sm:items-center">
             <p className="text-[13px] font-pmedium text-[#63738d]">You can update these details later from partner settings.</p>
             <button type="submit" disabled={submitting} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#2d67f0] px-7 text-[13px] font-pmedium text-white transition-colors hover:bg-[#2558d5] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
-              {submitting ? "Saving..." : "Continue"} <ArrowRight size={16} />
+              {submitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Saving…
+                </>
+              ) : (
+                <>
+                  Continue <ArrowRight size={16} />
+                </>
+              )}
             </button>
           </div>
         </form>
