@@ -65,7 +65,7 @@ const ForgotPasswordPage = () => {
                 </div>
                 <p className="text-[0.9rem]">
                   Already have an account?{" "}
-                  <Link to="/login" className="underline hover:text-primary">
+                  <Link to="/" className="underline hover:text-primary">
                     Login
                   </Link>
                 </p>

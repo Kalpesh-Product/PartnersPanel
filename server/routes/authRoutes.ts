@@ -1,8 +1,7 @@
 import { Router } from "express";
 import { getInviteByToken } from "../controllers/inviteController.js";
 import {
-  sendRegisterOtp,
-  verifyRegisterOtpAndComplete,
+  completeRegistration,
   login,
   refresh,
   logout,
@@ -15,8 +14,7 @@ import { loginRateLimiter, otpRateLimiter } from "../middlewares/rateLimiters.js
 const router = Router();
 
 router.get("/register/:token", getInviteByToken);
-router.post("/register/:token/send-otp", otpRateLimiter, sendRegisterOtp);
-router.post("/register/:token/verify-otp", otpRateLimiter, verifyRegisterOtpAndComplete);
+router.post("/register/:token/complete", completeRegistration);
 
 router.post("/login", loginRateLimiter, login);
 router.post("/refresh", refresh);

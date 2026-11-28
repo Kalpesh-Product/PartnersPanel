@@ -26,9 +26,16 @@ export const SERVICE_DESCRIPTIONS: Record<PartnerService, string> = {
   workationPartner: "Tell us about your workation support services and the destinations you serve.",
 };
 
-// The only vertical whose "Services Offered" options are actually specified
-// in the Figma mock. The other 4 verticals never had a fixed option list
-// designed, so their field is free-text (Autocomplete freeSolo) instead.
+// Visa's options were the only ones specified in the Figma mock; the other
+// three below are sourced from each vertical's own client-facing request
+// form on Nomads (the "Support Required" dropdown a client picks from), so
+// partners declare support in the same terms clients actually ask for:
+// - companySetupPartner: Nomads frontend/src/pages/AiNewCompanySetup.jsx
+// - consultationSupportPartner: Nomads frontend/src/pages/AiConsultation.jsx
+// - activationSupportPartner: Nomads frontend/src/pages/AiHelpGetActivated.jsx
+// Workation has no such list anywhere — its own client form (AiWorkation.jsx)
+// only collects headcount/destination/dates, no category picker — so it
+// stays free-text until there's a real list to use.
 export const VISA_TYPES_SUPPORTED = [
   "Explore / Travel",
   "Work Remotely",
@@ -38,3 +45,53 @@ export const VISA_TYPES_SUPPORTED = [
   "Relocate / Settle Long-Term",
   "Move with Family",
 ];
+
+export const COMPANY_SETUP_TYPES_SUPPORTED = [
+  "Private / Co-Working Setup for Registration",
+  "Virtual Office Setup for Registration",
+  "Fresh Company Setup",
+  "Subsidiary / Foreign Company Setup",
+  "Branch / Liaison Office Setup",
+  "LLP / Partnership Firm Registration",
+  "Redomiciliation / Company Migration",
+  "Setting up Holding Company Structure",
+  "Sole Proprietorship Registration",
+  "Offshore Company Setup",
+  "Not Sure - Need Customised Support",
+];
+
+export const CONSULTATION_TYPES_SUPPORTED = [
+  "Private Office / Co-Working Setup",
+  "Private Home / Shared Stay Setup",
+  "Business Expansion to New Country",
+  "Company Compliance & Filings",
+  "Accounting & Bookkeeping Services",
+  "Tax Advisory & Structuring",
+  "GST / VAT Registration & Filing",
+  "Legal Documentation / Agreements",
+  "Corporate Bank Account Opening",
+  "Business Structuring Consultation",
+  "Not Sure - Need Customised Support",
+];
+
+export const ACTIVATION_SUPPORT_TYPES_SUPPORTED = [
+  "Virtual Office",
+  "Co-Working",
+  "Co-Living",
+  "Hostels",
+  "Workation",
+  "Meeting Rooms",
+  "Cafes",
+  "Car & Bike renting",
+  "Yacht Renting",
+  "Airport Pickup / Drop",
+  "Company Registration Support",
+  "Personalised",
+];
+
+export const SERVICE_OFFERED_OPTIONS: Partial<Record<PartnerService, string[]>> = {
+  visaPartner: VISA_TYPES_SUPPORTED,
+  companySetupPartner: COMPANY_SETUP_TYPES_SUPPORTED,
+  consultationSupportPartner: CONSULTATION_TYPES_SUPPORTED,
+  activationSupportPartner: ACTIVATION_SUPPORT_TYPES_SUPPORTED,
+};

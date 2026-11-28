@@ -5,6 +5,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
+import "./sweetalert.css";
 import App from "./App.tsx";
 import { store, persistor } from "./redux/store";
 

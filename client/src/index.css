@@ -1,29 +1,50 @@
-/* Same fonts HostPanel's login/register/OTP pages load. */
-@import url("https://fonts.googleapis.com/css2?family=Playwrite+US+Modern:wght@100..400&family=Poppins:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playwrite+US+Modern:wght@100..400&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Matches HostPanel's ClientLogin.css + ClientSpecialClasses.css — same
-   class names, ported here instead of referencing HostPanel's own files. */
+/* Same local Poppins files + font-pmedium/pregular/pbold convention as
+   HostPanel/WoNoMasterPanel's tailwind.config fontFamily (pmedium maps to
+   the SemiBold file, not a synthesized weight-500 Poppins). */
+@font-face {
+  font-family: "Poppins-Regular";
+  src: url("./assets/fonts/Poppins-Regular.ttf");
+}
+@font-face {
+  font-family: "Poppins-SemiBold";
+  src: url("./assets/fonts/Poppins-SemiBold.ttf");
+  font-weight: 600;
+}
+@font-face {
+  font-family: "Poppins-Bold";
+  src: url("./assets/fonts/Poppins-Bold.ttf");
+}
+
 .font-play {
   font-family: "Playwrite US Modern";
 }
 
+.font-pregular {
+  font-family: "Poppins-Regular", sans-serif;
+}
+
 .font-pmedium {
-  font-family: "Poppins", sans-serif;
-  font-weight: 500;
+  font-family: "Poppins-SemiBold", serif;
+}
+
+.font-pbold {
+  font-family: "Poppins-Bold", serif;
 }
 
 .poppinsRegular {
-  font-family: "Poppins", sans-serif;
+  font-family: "Poppins-Regular", sans-serif;
 }
 
 .poppinsRegular .MuiInputBase-root,
 .poppinsRegular .MuiInputLabel-root,
 .poppinsRegular .MuiButtonBase-root {
-  font-family: "Poppins", sans-serif;
+  font-family: "Poppins-Regular", sans-serif;
 }
 
 .poppinsRegular .MuiInputBase-input {
@@ -111,8 +132,8 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: "Poppins", system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: "Poppins", system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: "Poppins-Regular", system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: "Poppins-Regular", system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 16px/1.5 var(--sans);
@@ -135,7 +156,7 @@
 
 body {
   margin: 0;
-  font-family: "Poppins", sans-serif;
+  font-family: "Poppins-Regular", sans-serif;
 }
 p {
   margin: 0;

@@ -55,7 +55,7 @@ const ResetPasswordPage = () => {
     try {
       const res = await api.post("/auth/forgot-password/reset", { resetSessionToken, password, confirmPassword });
       toast.success(res.data?.message || "Password reset successfully.");
-      navigate("/login", { replace: true });
+      navigate("/", { replace: true });
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to reset password."));
     } finally {
@@ -135,7 +135,7 @@ const ResetPasswordPage = () => {
                 </div>
                 <p className="text-[0.9rem]">
                   Remembered it?{" "}
-                  <Link to="/login" className="underline hover:text-primary">
+                  <Link to="/" className="underline hover:text-primary">
                     Login
                   </Link>
                 </p>

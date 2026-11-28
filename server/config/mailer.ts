@@ -18,14 +18,16 @@ interface SendMailOptions {
   subject: string;
   text?: string;
   html?: string;
+  attachments?: { filename: string; content: Buffer; contentType?: string }[];
 }
 
-export const sendMail = async ({ to, subject, text, html }: SendMailOptions) => {
+export const sendMail = async ({ to, subject, text, html, attachments }: SendMailOptions) => {
   await transporter.sendMail({
     from: `"WONO Partners" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     text,
     html,
+    attachments,
   });
 };

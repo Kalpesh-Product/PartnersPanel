@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { PARTNER_SERVICES, type PartnerService } from "../constants/partnerServices.js";
+import type { ISetupDocument } from "./Partner.js";
 
 // One invite per email while pending/accepted — approving a second service for
 // someone who already has an invite/account extends this same document's
@@ -11,6 +12,11 @@ export interface IPartnerInvite extends mongoose.Document {
   contactNumber?: string;
   linkedinProfile?: string;
   currentCountry?: string;
+  message?: string;
+  submittedAt?: Date | null;
+  // The default agreement PDF Master Panel had on file when this invite was
+  // sent/last extended — copied onto the Partner account at registration.
+  agreementDocument?: ISetupDocument | null;
   services: PartnerService[];
   sourceLeadRefs: { leadId: string; service: PartnerService }[];
   invitedBy: string;
@@ -37,6 +43,15 @@ const partnerInviteSchema = new Schema<IPartnerInvite>(
     contactNumber: { type: String, trim: true, default: "" },
     linkedinProfile: { type: String, trim: true, default: "" },
     currentCountry: { type: String, trim: true, default: "" },
+    message: { type: String, trim: true, default: "" },
+    submittedAt: { type: Date, default: null },
+    agreementDocument: {
+      type: new Schema<ISetupDocument>(
+        { url: { type: String, trim: true, default: "" }, id: { type: String, trim: true, default: "" }, name: { type: String, trim: true, default: "" } },
+        { _id: false },
+      ),
+      default: null,
+    },
     services: {
       type: [{ type: String, enum: PARTNER_SERVICES }],
       default: [],

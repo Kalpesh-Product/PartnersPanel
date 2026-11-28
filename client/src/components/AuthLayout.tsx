@@ -9,10 +9,10 @@ const AuthLayout = ({
   children: ReactNode;
   contentClassName?: string;
 }) => (
-  <div className="flex min-h-screen flex-col bg-white font-['Poppins'] text-[#0f172a]">
+  <div className="flex min-h-screen flex-col bg-white font-['Poppins-Regular'] text-[#0f172a]">
     <div className="bg-white/80 shadow-md backdrop-blur-md">
       <div className="mx-auto flex max-w-[80rem] items-center justify-between px-6 py-3 lg:px-0">
-        <a href="https://partners.wono.co/" aria-label="WONO Partners home">
+        <a href="https://partnerpanel.wono.co/" aria-label="WONO Partners home">
           <img src={logo} alt="WONO" className="h-10 w-36" />
         </a>
         <div className="hidden items-center gap-6 sm:flex lg:gap-10">

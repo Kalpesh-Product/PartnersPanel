@@ -20,13 +20,15 @@ const frontendUrl = () =>
 // straight onto their existing Partner account, no new invite needed.
 export const createOrExtendInvite = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, service, fullName, contactCode, contactNumber, linkedinProfile, currentCountry, leadId, invitedBy } =
+    const { email, service, services, fullName, contactCode, contactNumber, linkedinProfile, currentCountry, message, submittedAt, leadId, invitedBy, agreementDocument } =
       req.body || {};
+
+    const serviceList: string[] = Array.isArray(services) && services.length ? services : service ? [service] : [];
 
     if (!email || typeof email !== "string") {
       return res.status(400).json({ message: "A valid email is required." });
     }
-    if (!isPartnerService(service)) {
+    if (!serviceList.length || serviceList.some((entry) => !isPartnerService(entry))) {
       return res.status(400).json({ message: "A valid partner service is required." });
     }
 
@@ -34,26 +36,29 @@ export const createOrExtendInvite = async (req: Request, res: Response, next: Ne
 
     const existingPartner = await Partner.findOne({ email: normalizedEmail });
     if (existingPartner) {
-      const alreadyHasService = existingPartner.services.some((entry) => entry.service === service);
-      if (!alreadyHasService) {
-        existingPartner.services.push({
-          service: service as PartnerService,
-          companyName: "",
-          countryOfOrigin: "",
-          state: "",
-          city: "",
-          address: "",
-          website: "",
-          servicesOffered: [],
-          marketsServed: [],
-          addedAt: new Date(),
+      const existingServices = new Set(existingPartner.services.map((entry) => entry.service));
+      const newlyAdded = serviceList.filter((entry) => !existingServices.has(entry as PartnerService));
+      if (newlyAdded.length) {
+        newlyAdded.forEach((entry) => {
+          existingPartner.services.push({
+            service: entry as PartnerService,
+            companyName: "",
+            countryOfOrigin: "",
+            state: "",
+            city: "",
+            address: "",
+            website: "",
+            servicesOffered: [],
+            marketsServed: [],
+            addedAt: new Date(),
+          });
         });
         await existingPartner.save();
       }
       return res.status(200).json({
-        message: alreadyHasService
-          ? "This partner already has access to that service."
-          : "Service added to the partner's existing account.",
+        message: newlyAdded.length
+          ? `${newlyAdded.length} service${newlyAdded.length > 1 ? "s" : ""} added to the partner's existing account.`
+          : "This partner already has access to the requested service(s).",
         data: { accountExists: true, partnerId: existingPartner._id },
       });
     }
@@ -63,14 +68,20 @@ export const createOrExtendInvite = async (req: Request, res: Response, next: Ne
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
     if (invite) {
-      if (!invite.services.includes(service)) invite.services.push(service as PartnerService);
-      if (leadId) invite.sourceLeadRefs.push({ leadId: String(leadId), service: service as PartnerService });
+      serviceList.forEach((entry) => {
+        if (!invite!.services.includes(entry as PartnerService)) invite!.services.push(entry as PartnerService);
+        if (leadId) invite!.sourceLeadRefs.push({ leadId: String(leadId), service: entry as PartnerService });
+      });
       invite.fullName = fullName || invite.fullName;
       invite.contactCode = contactCode || invite.contactCode;
       invite.contactNumber = contactNumber || invite.contactNumber;
       invite.linkedinProfile = linkedinProfile || invite.linkedinProfile;
       invite.currentCountry = currentCountry || invite.currentCountry;
+      invite.message = message || invite.message;
+      invite.submittedAt = submittedAt ? new Date(submittedAt) : invite.submittedAt;
       invite.invitedBy = invitedBy || invite.invitedBy;
+      if (agreementDocument?.url) invite.agreementDocument = agreementDocument;
+      invite.tokenHash = hashToken(rawToken);
       invite.expiresAt = expiresAt;
       invite.lastSentAt = new Date();
       await invite.save();
@@ -82,8 +93,13 @@ export const createOrExtendInvite = async (req: Request, res: Response, next: Ne
         contactNumber: contactNumber || "",
         linkedinProfile: linkedinProfile || "",
         currentCountry: currentCountry || "",
-        services: [service],
-        sourceLeadRefs: leadId ? [{ leadId: String(leadId), service }] : [],
+        message: message || "",
+        submittedAt: submittedAt ? new Date(submittedAt) : null,
+        services: serviceList as PartnerService[],
+        sourceLeadRefs: leadId
+          ? serviceList.map((entry) => ({ leadId: String(leadId), service: entry as PartnerService }))
+          : [],
+        agreementDocument: agreementDocument?.url ? agreementDocument : null,
         invitedBy: invitedBy || "",
         tokenHash: hashToken(rawToken),
         expiresAt,
@@ -96,8 +112,36 @@ export const createOrExtendInvite = async (req: Request, res: Response, next: Ne
       fullName: invite.fullName,
       services: invite.services,
       registerUrl: `${frontendUrl()}/register/${rawToken}`,
+      email: invite.email,
+      contactCode: invite.contactCode,
+      contactNumber: invite.contactNumber,
+      linkedinProfile: invite.linkedinProfile,
+      currentCountry: invite.currentCountry,
+      message: invite.message,
+      submittedAt: invite.submittedAt,
     });
-    await sendMail({ to: invite.email, subject: email_.subject, text: email_.text, html: email_.html });
+
+    // Best-effort: the invite still sends (with a link to the agreement
+    // instead) if the download fails — never block the invite on this.
+    let attachments: { filename: string; content: Buffer; contentType?: string }[] | undefined;
+    if (invite.agreementDocument?.url) {
+      try {
+        const downloaded = await fetch(invite.agreementDocument.url);
+        if (downloaded.ok) {
+          attachments = [
+            {
+              filename: invite.agreementDocument.name || "Agreement.pdf",
+              content: Buffer.from(await downloaded.arrayBuffer()),
+              contentType: "application/pdf",
+            },
+          ];
+        }
+      } catch {
+        attachments = undefined;
+      }
+    }
+
+    await sendMail({ to: invite.email, subject: email_.subject, text: email_.text, html: email_.html, attachments });
 
     return res.status(200).json({ message: "Invite sent.", data: { inviteId: invite._id, services: invite.services } });
   } catch (error) {

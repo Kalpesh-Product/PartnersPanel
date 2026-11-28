@@ -9,7 +9,6 @@ import { validateStrongPassword } from "../utils/password.js";
 import { hashToken } from "./inviteController.js";
 
 const OTP_EXPIRY_MINUTES = 10;
-const OTP_RESEND_COOLDOWN_MS = 30 * 1000;
 const ACCESS_TOKEN_EXPIRY = "15m";
 const REFRESH_TOKEN_EXPIRY = "7d";
 
@@ -28,8 +27,10 @@ const findPendingInvite = async (token: string | string[]) => {
   return { invite };
 };
 
-// POST /api/auth/register/:token/send-otp — body: { password, confirmPassword }
-export const sendRegisterOtp = async (req: Request, res: Response, next: NextFunction) => {
+// POST /api/auth/register/:token/complete — body: { password, confirmPassword }
+// No OTP here: the email was already verified upstream, at Nomads' lead-
+// submission form, before Master Panel ever saw this lead to invite.
+export const completeRegistration = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { password, confirmPassword } = req.body || {};
     if (!password || !confirmPassword) {
@@ -43,69 +44,6 @@ export const sendRegisterOtp = async (req: Request, res: Response, next: NextFun
 
     const { invite, error } = await findPendingInvite(req.params.token);
     if (error) return res.status(error.status).json({ message: error.message });
-
-    const existingPartner = await Partner.findOne({ email: invite!.email });
-    if (existingPartner) {
-      return res.status(409).json({ message: "An account already exists for this email. Please sign in." });
-    }
-
-    const recentOtp = await Otp.findOne({ email: invite!.email, purpose: "registration", isUsed: false })
-      .sort({ createdAt: -1 })
-      .lean();
-    if (recentOtp && Date.now() - new Date(recentOtp.createdAt).getTime() < OTP_RESEND_COOLDOWN_MS) {
-      return res.status(429).json({ message: "Please wait a moment before requesting another code." });
-    }
-
-    const code = `${Math.floor(100000 + Math.random() * 900000)}`;
-    await Otp.updateMany({ email: invite!.email, purpose: "registration", isUsed: false }, { $set: { isUsed: true } });
-    await Otp.create({
-      email: invite!.email,
-      code,
-      purpose: "registration",
-      expiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000),
-      payload: { password, inviteToken: req.params.token },
-    });
-
-    const email_ = buildOtpEmail({ fullName: invite!.fullName, code, expiryMinutes: OTP_EXPIRY_MINUTES });
-    await sendMail({ to: invite!.email, subject: email_.subject, text: email_.text, html: email_.html });
-
-    return res.status(200).json({ message: "OTP sent successfully.", email: invite!.email });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// POST /api/auth/register/:token/verify-otp — body: { otp }
-export const verifyRegisterOtpAndComplete = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { otp } = req.body || {};
-    if (!otp) return res.status(400).json({ message: "OTP is required." });
-
-    const { invite, error } = await findPendingInvite(req.params.token);
-    if (error) return res.status(error.status).json({ message: error.message });
-
-    const otpRecord = await Otp.findOne({ email: invite!.email, purpose: "registration", isUsed: false }).sort({
-      createdAt: -1,
-    });
-    if (!otpRecord) return res.status(400).json({ message: "Please request an OTP first." });
-    if (otpRecord.expiresAt.getTime() < Date.now()) {
-      otpRecord.isUsed = true;
-      await otpRecord.save();
-      return res.status(400).json({ message: "OTP expired. Please request a new one." });
-    }
-    if (otpRecord.attempts >= 5) {
-      otpRecord.isUsed = true;
-      await otpRecord.save();
-      return res.status(429).json({ message: "Too many attempts. Please request a new OTP." });
-    }
-    if (String(otpRecord.code) !== String(otp)) {
-      otpRecord.attempts += 1;
-      await otpRecord.save();
-      return res.status(400).json({ message: "Invalid OTP." });
-    }
-
-    const password = (otpRecord.payload as { password?: string })?.password;
-    if (!password) return res.status(400).json({ message: "Registration session expired. Please start again." });
 
     const existingPartner = await Partner.findOne({ email: invite!.email });
     if (existingPartner) {
@@ -135,10 +73,9 @@ export const verifyRegisterOtpAndComplete = async (req: Request, res: Response, 
         marketsServed: [],
         addedAt: new Date(),
       })),
+      agreementDocument: invite!.agreementDocument || null,
     });
 
-    otpRecord.isUsed = true;
-    await otpRecord.save();
     invite!.status = "accepted";
     invite!.acceptedAt = new Date();
     invite!.acceptedPartnerId = partner._id as any;
